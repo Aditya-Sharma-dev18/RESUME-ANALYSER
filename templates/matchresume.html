@@ -1,246 +1,167 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>AI Resume Analyzer</title>
-
-    <link rel="stylesheet"
-        href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
-
-        body {
-            background-color: #f4f6f9;
-            font-family: Arial, sans-serif;
-        }
-
-        .container {
-            margin-top: 40px;
-            margin-bottom: 40px;
-        }
-
-        .card {
-            border-radius: 15px;
-            box-shadow: 0 6px 15px rgba(0,0,0,0.1);
-            border: none;
-        }
-
-        .card-header {
-            background: linear-gradient(to right, #007bff, #0056b3);
-            color: white;
-            border-radius: 15px 15px 0 0;
-            padding: 20px;
-        }
-
-        .card-body {
-            padding: 30px;
-        }
-
-        .form-group {
-            margin-bottom: 25px;
-        }
-
-        textarea {
-            resize: none;
-        }
-
-        .btn-primary {
-            width: 100%;
-            padding: 12px;
-            font-size: 18px;
-            border-radius: 10px;
-        }
-
-        .result-card {
-            background-color: white;
-            border-radius: 12px;
-            padding: 20px;
-            margin-top: 20px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
-        }
-
-        .badge-score {
-            font-size: 15px;
-            padding: 8px 12px;
-            margin-right: 8px;
-        }
-
-        .section-title {
-            margin-top: 15px;
-            font-weight: bold;
-        }
-
-        ul {
-            padding-left: 20px;
-        }
-
-        .download-box {
-            margin-top: 25px;
-            text-align: center;
-        }
-
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{background:#f0f2f5;font-family:'Segoe UI',Arial,sans-serif}
+        .navbar{background:#fff;padding:15px 30px;box-shadow:0 2px 10px rgba(0,0,0,.08);display:flex;justify-content:space-between;align-items:center}
+        .navbar-brand{font-size:22px;font-weight:700;color:#007bff}
+        .navbar-tag{color:#888;font-size:13px;background:#f0f7ff;padding:5px 12px;border-radius:20px;border:1px solid #cce0ff}
+        .hero{background:linear-gradient(135deg,#007bff,#0056b3);color:#fff;padding:40px 20px;text-align:center}
+        .hero h1{font-size:28px;font-weight:700;margin-bottom:8px}
+        .hero p{font-size:14px;opacity:.9}
+        .feature-pills{display:flex;justify-content:center;gap:8px;margin-top:12px;flex-wrap:wrap}
+        .feature-pill{background:rgba(255,255,255,.2);color:#fff;padding:5px 14px;border-radius:20px;font-size:12px;border:1px solid rgba(255,255,255,.4)}
+        .main-container{max-width:900px;margin:0 auto;padding:25px 15px 60px}
+        .form-card{background:#fff;border-radius:14px;box-shadow:0 4px 18px rgba(0,0,0,.07);padding:30px;margin-bottom:20px}
+        .form-card h5{font-weight:700;color:#333;margin-bottom:18px;font-size:16px}
+        label{font-weight:600;color:#444;margin-bottom:5px;display:block}
+        .form-control{border-radius:8px;border:1.5px solid #dee2e6;padding:10px;font-size:14px}
+        .form-control:focus{border-color:#007bff;box-shadow:0 0 0 3px rgba(0,123,255,.15)}
+        textarea{resize:none}
+        .btn-analyze{background:linear-gradient(135deg,#007bff,#0056b3);color:#fff;border:none;padding:13px;border-radius:10px;font-size:15px;font-weight:600;width:100%;cursor:pointer;margin-top:5px}
+        .btn-analyze:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,123,255,.35)}
+        .btn-pdf{background:linear-gradient(135deg,#28a745,#1e7e34);color:#fff;border:none;padding:14px 45px;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block;margin:20px 0}
+        .btn-pdf:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(40,167,69,.35);color:#fff;text-decoration:none}
+        .success-alert{background:#e8f5e9;border-left:5px solid #28a745;border-radius:10px;padding:14px 18px;margin-bottom:18px;color:#1b5e20;font-weight:600}
+        .result-card{background:#fff;border-radius:14px;border-left:5px solid #007bff;box-shadow:0 4px 16px rgba(0,0,0,.06);padding:22px;margin-bottom:18px}
+        .result-card h4{color:#007bff;font-weight:700;font-size:16px;margin-bottom:4px}
+        .rank-badge{display:inline-block;background:#007bff;color:#fff;font-size:11px;padding:3px 10px;border-radius:10px;margin-bottom:10px}
+        .divider{border:none;border-top:1px solid #f0f0f0;margin:12px 0}
+        .score-badges{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+        .score-badge{font-size:12px;padding:6px 12px;border-radius:18px;font-weight:600;display:flex;align-items:center;gap:5px}
+        .badge-sim{background:#e3f2fd;color:#1565c0}
+        .badge-ats{background:#e8f5e9;color:#2e7d32}
+        .badge-level{background:#fff3e0;color:#e65100}
+        .badge-shortlist{background:#e8f5e9;color:#2e7d32}
+        .badge-consider{background:#fff8e1;color:#f57f17}
+        .badge-reject{background:#ffebee;color:#c62828}
+        .progress-wrap{margin:10px 0}
+        .progress{height:8px;border-radius:5px;background:#e9ecef}
+        .progress-bar{border-radius:5px;background:linear-gradient(135deg,#007bff,#0056b3)}
+        .progress-label{font-size:11px;color:#888;margin-top:3px}
+        .section-heading{font-weight:700;font-size:13px;color:#333;margin:14px 0 7px;display:flex;align-items:center;gap:6px}
+        .skill-tag{display:inline-block;background:#ffebee;color:#c62828;padding:4px 10px;border-radius:14px;font-size:11px;margin:2px;font-weight:500}
+        .skill-tag-matched{display:inline-block;background:#e8f5e9;color:#2e7d32;padding:4px 10px;border-radius:14px;font-size:11px;margin:2px;font-weight:500}
+        .suggestion-card{background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:12px 15px;margin:7px 0;display:flex;justify-content:space-between;align-items:center}
+        .suggestion-card:hover{border-color:#007bff;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+        .suggestion-info{flex:1}
+        .suggestion-skill{font-weight:600;font-size:13px;color:#333}
+        .suggestion-desc{font-size:11px;color:#777;margin-top:2px}
+        .suggestion-category{font-size:10px;background:#f0f7ff;color:#007bff;padding:2px 8px;border-radius:10px;display:inline-block;margin-top:3px}
+        .btn-youtube{background:red;color:#fff;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;white-space:nowrap;margin-left:10px}
+        .btn-youtube:hover{background:#c00;color:#fff;text-decoration:none}
+        .interview-card{background:#fff;border-radius:14px;box-shadow:0 4px 16px rgba(0,0,0,.06);padding:22px;margin-bottom:18px}
+        .interview-card h4{color:#007bff;font-weight:700;font-size:16px;margin-bottom:12px}
+        .question-item{background:#f0f7ff;border-left:3px solid #007bff;padding:9px 14px;border-radius:6px;margin:6px 0;font-size:13px;color:#333}
+        .footer{text-align:center;padding:18px;color:#aaa;font-size:12px;border-top:1px solid #eee;margin-top:15px}
+        .pdf-section{text-align:center}
     </style>
-
 </head>
-
 <body>
-
-    <div class="container">
-
-        <div class="card">
-
-            <div class="card-header text-center">
-                <h2>AI Resume Analyzer & ATS System</h2>
-                <p>Resume Matching • ATS Scoring • Skill Gap Analysis</p>
+<div class="navbar">
+    <span class="navbar-brand"><i class="fas fa-brain"></i> AI Resume Analyzer</span>
+    <span class="navbar-tag">ATS + Skill Gap + YouTube + PDF</span>
+</div>
+<div class="hero">
+    <h1><i class="fas fa-file-alt"></i> Smart Resume Screening System</h1>
+    <p>AI-powered ATS scoring • Skill gap analysis • YouTube resources • PDF reports</p>
+    <div class="feature-pills">
+        <span class="feature-pill"><i class="fas fa-robot"></i> ATS Scoring</span>
+        <span class="feature-pill"><i class="fas fa-search"></i> Skill Gap</span>
+        <span class="feature-pill"><i class="fas fa-youtube"></i> YouTube</span>
+        <span class="feature-pill"><i class="fas fa-file-pdf"></i> PDF Report</span>
+        <span class="feature-pill"><i class="fas fa-question-circle"></i> Interview Qs</span>
+    </div>
+</div>
+<div class="main-container">
+    <div class="form-card">
+        <h5><i class="fas fa-upload" style="color:#007bff"></i> Upload & Analyze</h5>
+        <form method="POST" action="/matcher" enctype="multipart/form-data">
+            <div class="form-group">
+                <label><i class="fas fa-briefcase"></i> Job Description</label>
+                <textarea class="form-control" name="job_description" rows="5" placeholder="Paste JD here..." required></textarea>
             </div>
-
-            <div class="card-body">
-
-                <form method="POST"
-                    action="/matcher"
-                    enctype="multipart/form-data">
-
-                    <div class="form-group">
-
-                        <label>
-                            <strong>Job Description</strong>
-                        </label>
-
-                        <textarea
-                            class="form-control"
-                            id="job_description"
-                            name="job_description"
-                            rows="6"
-                            placeholder="Paste Job Description Here..."
-                            required></textarea>
-
-                    </div>
-
-                    <div class="form-group">
-
-                        <label>
-                            <strong>Upload Resumes</strong>
-                        </label>
-
-                        <input
-                            type="file"
-                            class="form-control"
-                            id="resumes"
-                            name="resumes"
-                            multiple
-                            required
-                            accept=".pdf,.docx,.txt">
-
-                    </div>
-
-                    <button
-                        type="submit"
-                        class="btn btn-primary">
-
-                        Analyze Resumes
-
-                    </button>
-
-                </form>
-
-                {% if message %}
-
-                <div class="alert alert-success mt-4">
-                    <strong>{{ message }}</strong>
-                </div>
-
-                {% for index in range(top_resumes|length) %}
-
-                <div class="result-card">
-
-                    <h4>
-                        {{ top_resumes[index] }}
-                    </h4>
-
-                    <br>
-
-                    <span class="badge badge-primary badge-score">
-                        Similarity:
-                        {{ similarity_scores[index] }}%
-                    </span>
-
-                    <span class="badge badge-success badge-score">
-                        ATS Score:
-                        {{ ats_scores[index] }}%
-                    </span>
-
-                    <span class="badge badge-info badge-score">
-                        Level:
-                        {{ resume_levels[index] }}
-                    </span>
-
-                    <span class="badge badge-warning badge-score">
-                        Recruiter Decision:
-                        {{ recruiter_decisions[index] }}
-                    </span>
-
-                    <div class="section-title">
-                        Missing Skills
-                    </div>
-
-                    <ul>
-
-                        {% for skill in missing_skills_all[index] %}
-
-                        <li>{{ skill }}</li>
-
-                        {% endfor %}
-
-                    </ul>
-
-                    <div class="section-title">
-                        Improvement Suggestions
-                    </div>
-
-                    <ul>
-
-                        {% for suggestion in improvement_suggestions[index] %}
-
-                        <li>{{ suggestion }}</li>
-
-                        {% endfor %}
-
-                    </ul>
-
-                </div>
-
-                {% endfor %}
-
-                <div class="download-box">
-
-                    <a href="/static/report.txt"
-                        class="btn btn-success">
-
-                        Download Analysis Report
-
-                    </a>
-
-                </div>
-
-                {% endif %}
-
+            <div class="form-group">
+                <label><i class="fas fa-file-upload"></i> Upload Resumes</label>
+                <input type="file" class="form-control" name="resumes" multiple required accept=".pdf,.docx,.txt">
+                <small class="text-muted mt-1 d-block"><i class="fas fa-info-circle"></i> PDF, DOCX, TXT</small>
             </div>
-
-        </div>
-
+            <button type="submit" class="btn-analyze"><i class="fas fa-search"></i> &nbsp; Analyze</button>
+        </form>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    {% if message %}
+    <div class="success-alert"><i class="fas fa-check-circle"></i> &nbsp; {{ message }}</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <div class="pdf-section">
+        <a href="/download-report" class="btn-pdf"><i class="fas fa-file-pdf"></i> &nbsp; Download PDF Report</a>
+    </div>
 
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    {% for index in range(top_resumes|length) %}
+    <div class="result-card">
+        <span class="rank-badge">Rank #{{ index+1 }}</span>
+        <h4><i class="fas fa-user-tie"></i> {{ top_resumes[index] }}</h4>
+        <hr class="divider">
+        <div class="score-badges">
+            <span class="score-badge badge-sim"><i class="fas fa-chart-line"></i> Sim: {{ similarity_scores[index] }}%</span>
+            <span class="score-badge badge-ats"><i class="fas fa-robot"></i> ATS: {{ ats_scores[index] }}%</span>
+            <span class="score-badge badge-level"><i class="fas fa-star"></i> {{ resume_levels[index] }}</span>
+            {% if recruiter_decisions[index]=='Shortlist' %}
+            <span class="score-badge badge-shortlist"><i class="fas fa-check-circle"></i> Shortlist</span>
+            {% elif recruiter_decisions[index]=='Consider' %}
+            <span class="score-badge badge-consider"><i class="fas fa-exclamation-circle"></i> Consider</span>
+            {% else %}
+            <span class="score-badge badge-reject"><i class="fas fa-times-circle"></i> Reject</span>
+            {% endif %}
+        </div>
+        <div class="progress-wrap">
+            <div class="progress"><div class="progress-bar" style="width:{{ ats_scores[index] }}%"></div></div>
+            <div class="progress-label">ATS: {{ ats_scores[index] }}%</div>
+        </div>
 
+        <div class="section-heading"><i class="fas fa-check-circle" style="color:#2e7d32"></i> Matched Skills</div>
+        {% if matched_skills_all[index] %}
+            {% for s in matched_skills_all[index] %}<span class="skill-tag-matched">{{ s }}</span>{% endfor %}
+        {% else %}<span style="color:#c62828;font-size:13px">None</span>{% endif %}
+
+        <div class="section-heading"><i class="fas fa-exclamation-circle" style="color:#e53935"></i> Missing Skills</div>
+        {% if missing_skills_all[index] %}
+            {% for s in missing_skills_all[index] %}<span class="skill-tag">{{ s }}</span>{% endfor %}
+        {% else %}<span style="color:#2e7d32;font-size:13px"><i class="fas fa-trophy"></i> All matched!</span>{% endif %}
+
+        <div class="section-heading"><i class="fas fa-lightbulb" style="color:#f9a825"></i> Learning Resources</div>
+        {% if improvement_suggestions[index] %}
+            {% for sug in improvement_suggestions[index] %}
+            <div class="suggestion-card">
+                <div class="suggestion-info">
+                    <div class="suggestion-skill"><i class="fas fa-graduation-cap" style="color:#007bff"></i> Learn: {{ sug.skill.title() }}</div>
+                    <div class="suggestion-desc">{{ sug.description }}</div>
+                    <span class="suggestion-category">{{ sug.category }}</span>
+                </div>
+                <a href="{{ sug.youtube }}" target="_blank" class="btn-youtube"><i class="fab fa-youtube"></i> Watch</a>
+            </div>
+            {% endfor %}
+        {% else %}<span style="color:#2e7d32;font-size:13px">None needed!</span>{% endif %}
+    </div>
+    {% endfor %}
+
+    {% if interview_questions %}
+    <div class="interview-card">
+        <h4><i class="fas fa-question-circle"></i> Interview Questions</h4>
+        <hr class="divider">
+        {% for q in interview_questions %}
+        <div class="question-item"><strong>Q{{ loop.index }}.</strong> {{ q }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endif %}
+</div>
+<div class="footer">AI Resume Analyzer &copy; 2025 | Flask + ML</div>
 </body>
-
 </html>
-```
