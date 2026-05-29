@@ -1,0 +1,246 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>AI Resume Analyzer</title>
+
+    <link rel="stylesheet"
+        href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+    <style>
+
+        body {
+            background-color: #f4f6f9;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            margin-top: 40px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+            border: none;
+        }
+
+        .card-header {
+            background: linear-gradient(to right, #007bff, #0056b3);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            padding: 20px;
+        }
+
+        .card-body {
+            padding: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        textarea {
+            resize: none;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 12px;
+            font-size: 18px;
+            border-radius: 10px;
+        }
+
+        .result-card {
+            background-color: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        }
+
+        .badge-score {
+            font-size: 15px;
+            padding: 8px 12px;
+            margin-right: 8px;
+        }
+
+        .section-title {
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        ul {
+            padding-left: 20px;
+        }
+
+        .download-box {
+            margin-top: 25px;
+            text-align: center;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <div class="container">
+
+        <div class="card">
+
+            <div class="card-header text-center">
+                <h2>AI Resume Analyzer & ATS System</h2>
+                <p>Resume Matching • ATS Scoring • Skill Gap Analysis</p>
+            </div>
+
+            <div class="card-body">
+
+                <form method="POST"
+                    action="/matcher"
+                    enctype="multipart/form-data">
+
+                    <div class="form-group">
+
+                        <label>
+                            <strong>Job Description</strong>
+                        </label>
+
+                        <textarea
+                            class="form-control"
+                            id="job_description"
+                            name="job_description"
+                            rows="6"
+                            placeholder="Paste Job Description Here..."
+                            required></textarea>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label>
+                            <strong>Upload Resumes</strong>
+                        </label>
+
+                        <input
+                            type="file"
+                            class="form-control"
+                            id="resumes"
+                            name="resumes"
+                            multiple
+                            required
+                            accept=".pdf,.docx,.txt">
+
+                    </div>
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary">
+
+                        Analyze Resumes
+
+                    </button>
+
+                </form>
+
+                {% if message %}
+
+                <div class="alert alert-success mt-4">
+                    <strong>{{ message }}</strong>
+                </div>
+
+                {% for index in range(top_resumes|length) %}
+
+                <div class="result-card">
+
+                    <h4>
+                        {{ top_resumes[index] }}
+                    </h4>
+
+                    <br>
+
+                    <span class="badge badge-primary badge-score">
+                        Similarity:
+                        {{ similarity_scores[index] }}%
+                    </span>
+
+                    <span class="badge badge-success badge-score">
+                        ATS Score:
+                        {{ ats_scores[index] }}%
+                    </span>
+
+                    <span class="badge badge-info badge-score">
+                        Level:
+                        {{ resume_levels[index] }}
+                    </span>
+
+                    <span class="badge badge-warning badge-score">
+                        Recruiter Decision:
+                        {{ recruiter_decisions[index] }}
+                    </span>
+
+                    <div class="section-title">
+                        Missing Skills
+                    </div>
+
+                    <ul>
+
+                        {% for skill in missing_skills_all[index] %}
+
+                        <li>{{ skill }}</li>
+
+                        {% endfor %}
+
+                    </ul>
+
+                    <div class="section-title">
+                        Improvement Suggestions
+                    </div>
+
+                    <ul>
+
+                        {% for suggestion in improvement_suggestions[index] %}
+
+                        <li>{{ suggestion }}</li>
+
+                        {% endfor %}
+
+                    </ul>
+
+                </div>
+
+                {% endfor %}
+
+                <div class="download-box">
+
+                    <a href="/static/report.txt"
+                        class="btn btn-success">
+
+                        Download Analysis Report
+
+                    </a>
+
+                </div>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+</body>
+
+</html>
+```
