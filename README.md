@@ -5,7 +5,13 @@ An AI-based Resume Analyzer that evaluates resumes against job descriptions and 
 This project is built to help students and job seekers understand how well their resume performs in real hiring systems and how to optimize it for better selection chances.
 
 ---
+## 🌐 Live Demo
 
+🔗 **Try it now:** [https://resume-analyser-sazk.onrender.com](https://resume-analyser-sazk.onrender.com)
+
+> ⚠️ First load may take 30-50 seconds (free hosting wakes up from sleep)
+
+---
 ## 🚀 Features
 
 ### 🎯 ATS Score Generator
