@@ -1,6 +1,8 @@
 # ============================================
 # AI RESUME ANALYZER - COMPLETE PROJECT
 # Features: ATS Scoring, Skill Gap, YouTube, PDF
+# 50+ Skills with Synonym Matching
+# Deployed on Render
 # ============================================
 
 from flask import Flask, request, render_template, send_file
@@ -12,196 +14,386 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from datetime import datetime
 
-# PDF generation library
 from reportlab.lib.pagesizes import A4
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from reportlab.lib.units import inch
 
-# Initialize Flask app
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'uploads/'  # Folder to store uploaded resumes
+app.config['UPLOAD_FOLDER'] = 'uploads/'
+
 
 # ============================================
-# SKILL DATABASE
-# Each skill has: category, synonyms, YouTube link
+# COMPLETE SKILL DATABASE
+# Each skill has: category, synonyms, YouTube learning link
 # Synonyms help match different forms (e.g., "os" = "operating systems")
 # ============================================
 
 skill_data = {
-    # ---------- Programming Languages ----------
+
+    # ==================== PROGRAMMING LANGUAGES ====================
     "python": {
         "category": "Programming",
         "synonyms": ["python", "py"],
-        "youtube": "https://www.youtube.com/results?search_query=python+full+course+for+beginners+2025"
+        "youtube": "https://www.youtube.com/results?search_query=python+full+course+2025"
     },
     "java": {
         "category": "Programming",
         "synonyms": ["java", "oops", "object oriented programming"],
-        "youtube": "https://www.youtube.com/results?search_query=java+spring+boot+full+course+2025"
+        "youtube": "https://www.youtube.com/results?search_query=java+full+course+2025"
     },
     "c++": {
         "category": "Programming",
         "synonyms": ["c++", "cpp", "c plus plus"],
-        "youtube": "https://www.youtube.com/results?search_query=c%2B%2B+data+structures+algorithms+course"
+        "youtube": "https://www.youtube.com/results?search_query=c%2B%2B+full+course"
     },
     "javascript": {
         "category": "Programming",
-        "synonyms": ["javascript", "js", "nodejs", "node.js", "node js", "node"],
-        "youtube": "https://www.youtube.com/results?search_query=javascript+full+course+2025"
+        "synonyms": ["javascript", "js", "nodejs", "node.js", "node"],
+        "youtube": "https://www.youtube.com/results?search_query=javascript+full+course"
+    },
+    "typescript": {
+        "category": "Programming",
+        "synonyms": ["typescript", "ts"],
+        "youtube": "https://www.youtube.com/results?search_query=typescript+full+course"
+    },
+    "c#": {
+        "category": "Programming",
+        "synonyms": ["c#", "c sharp", ".net"],
+        "youtube": "https://www.youtube.com/results?search_query=c+sharp+full+course"
+    },
+    "php": {
+        "category": "Programming",
+        "synonyms": ["php"],
+        "youtube": "https://www.youtube.com/results?search_query=php+full+course"
+    },
+    "swift": {
+        "category": "Programming",
+        "synonyms": ["swift", "ios"],
+        "youtube": "https://www.youtube.com/results?search_query=swift+full+course"
+    },
+    "kotlin": {
+        "category": "Programming",
+        "synonyms": ["kotlin"],
+        "youtube": "https://www.youtube.com/results?search_query=kotlin+full+course"
+    },
+    "go": {
+        "category": "Programming",
+        "synonyms": ["go", "golang"],
+        "youtube": "https://www.youtube.com/results?search_query=golang+full+course"
+    },
+    "rust": {
+        "category": "Programming",
+        "synonyms": ["rust"],
+        "youtube": "https://www.youtube.com/results?search_query=rust+full+course"
     },
 
-    # ---------- AI / Machine Learning ----------
+    # ==================== AI / MACHINE LEARNING ====================
     "machine learning": {
         "category": "AI/ML",
         "synonyms": ["machine learning", "ml"],
-        "youtube": "https://www.youtube.com/results?search_query=machine+learning+full+course+2025"
+        "youtube": "https://www.youtube.com/results?search_query=machine+learning+full+course"
     },
     "deep learning": {
         "category": "AI/ML",
         "synonyms": ["deep learning", "neural networks", "cnn", "rnn"],
-        "youtube": "https://www.youtube.com/results?search_query=deep+learning+tensorflow+full+course"
+        "youtube": "https://www.youtube.com/results?search_query=deep+learning+full+course"
     },
     "tensorflow": {
         "category": "AI/ML",
         "synonyms": ["tensorflow", "tf"],
-        "youtube": "https://www.youtube.com/results?search_query=tensorflow+tutorial+for+beginners+2025"
+        "youtube": "https://www.youtube.com/results?search_query=tensorflow+tutorial"
     },
     "keras": {
         "category": "AI/ML",
         "synonyms": ["keras"],
-        "youtube": "https://www.youtube.com/results?search_query=keras+deep+learning+tutorial"
+        "youtube": "https://www.youtube.com/results?search_query=keras+tutorial"
     },
     "scikit-learn": {
         "category": "AI/ML",
-        "synonyms": ["scikit-learn", "scikit learn", "sklearn"],
-        "youtube": "https://www.youtube.com/results?search_query=scikit+learn+full+tutorial"
+        "synonyms": ["scikit-learn", "sklearn"],
+        "youtube": "https://www.youtube.com/results?search_query=scikit+learn+tutorial"
     },
     "numpy": {
         "category": "AI/ML",
         "synonyms": ["numpy"],
-        "youtube": "https://www.youtube.com/results?search_query=numpy+python+tutorial"
+        "youtube": "https://www.youtube.com/results?search_query=numpy+tutorial"
     },
     "pandas": {
         "category": "AI/ML",
         "synonyms": ["pandas"],
-        "youtube": "https://www.youtube.com/results?search_query=pandas+python+data+analysis+tutorial"
+        "youtube": "https://www.youtube.com/results?search_query=pandas+tutorial"
     },
     "nlp": {
         "category": "AI/ML",
         "synonyms": ["nlp", "natural language processing", "spacy", "nltk"],
-        "youtube": "https://www.youtube.com/results?search_query=natural+language+processing+full+course"
+        "youtube": "https://www.youtube.com/results?search_query=nlp+full+course"
     },
     "computer vision": {
         "category": "AI/ML",
         "synonyms": ["computer vision", "opencv", "cv"],
-        "youtube": "https://www.youtube.com/results?search_query=opencv+computer+vision+full+course"
+        "youtube": "https://www.youtube.com/results?search_query=computer+vision+full+course"
+    },
+    "data science": {
+        "category": "AI/ML",
+        "synonyms": ["data science", "data scientist"],
+        "youtube": "https://www.youtube.com/results?search_query=data+science+full+course"
     },
 
-    # ---------- Web Frameworks ----------
+    # ==================== WEB FRAMEWORKS ====================
     "flask": {
         "category": "Web Framework",
         "synonyms": ["flask"],
-        "youtube": "https://www.youtube.com/results?search_query=flask+python+full+tutorial+2025"
+        "youtube": "https://www.youtube.com/results?search_query=flask+tutorial"
     },
     "django": {
         "category": "Web Framework",
         "synonyms": ["django"],
-        "youtube": "https://www.youtube.com/results?search_query=django+python+full+tutorial+2025"
+        "youtube": "https://www.youtube.com/results?search_query=django+tutorial"
     },
     "react": {
         "category": "Web Framework",
         "synonyms": ["react", "reactjs", "react.js"],
-        "youtube": "https://www.youtube.com/results?search_query=react+js+full+course+2025"
+        "youtube": "https://www.youtube.com/results?search_query=react+js+full+course"
+    },
+    "angular": {
+        "category": "Web Framework",
+        "synonyms": ["angular", "angularjs"],
+        "youtube": "https://www.youtube.com/results?search_query=angular+full+course"
+    },
+    "vue": {
+        "category": "Web Framework",
+        "synonyms": ["vue", "vuejs"],
+        "youtube": "https://www.youtube.com/results?search_query=vue+js+full+course"
+    },
+    "next.js": {
+        "category": "Web Framework",
+        "synonyms": ["next.js", "nextjs"],
+        "youtube": "https://www.youtube.com/results?search_query=next+js+full+course"
     },
     "api": {
         "category": "Web Framework",
-        "synonyms": ["api", "rest api", "restful", "fastapi"],
-        "youtube": "https://www.youtube.com/results?search_query=rest+api+python+flask+tutorial"
+        "synonyms": ["api", "rest api", "restful", "fastapi", "graphql"],
+        "youtube": "https://www.youtube.com/results?search_query=rest+api+tutorial"
     },
     "html": {
         "category": "Web Framework",
-        "synonyms": ["html", "css"],
+        "synonyms": ["html", "css", "html5", "css3"],
         "youtube": "https://www.youtube.com/results?search_query=html+css+full+course"
     },
+    "bootstrap": {
+        "category": "Web Framework",
+        "synonyms": ["bootstrap", "tailwind"],
+        "youtube": "https://www.youtube.com/results?search_query=bootstrap+tutorial"
+    },
 
-    # ---------- Databases ----------
+    # ==================== DATABASES ====================
     "sql": {
         "category": "Database",
-        "synonyms": ["sql", "mysql", "postgresql", "postgres"],
-        "youtube": "https://www.youtube.com/results?search_query=sql+full+course+for+beginners"
+        "synonyms": ["sql", "mysql", "postgresql", "postgres", "oracle"],
+        "youtube": "https://www.youtube.com/results?search_query=sql+full+course"
     },
     "mongodb": {
         "category": "Database",
         "synonyms": ["mongodb", "mongo", "nosql"],
-        "youtube": "https://www.youtube.com/results?search_query=mongodb+full+tutorial+2025"
+        "youtube": "https://www.youtube.com/results?search_query=mongodb+tutorial"
     },
     "dbms": {
         "category": "Database",
         "synonyms": ["dbms", "database management"],
-        "youtube": "https://www.youtube.com/results?search_query=dbms+full+course+placements"
+        "youtube": "https://www.youtube.com/results?search_query=dbms+full+course"
+    },
+    "firebase": {
+        "category": "Database",
+        "synonyms": ["firebase"],
+        "youtube": "https://www.youtube.com/results?search_query=firebase+tutorial"
+    },
+    "redis": {
+        "category": "Database",
+        "synonyms": ["redis", "caching"],
+        "youtube": "https://www.youtube.com/results?search_query=redis+tutorial"
     },
 
-    # ---------- DevOps & Cloud ----------
+    # ==================== DEVOPS & CLOUD ====================
     "docker": {
         "category": "DevOps",
         "synonyms": ["docker", "containerization"],
-        "youtube": "https://www.youtube.com/results?search_query=docker+full+tutorial+2025"
+        "youtube": "https://www.youtube.com/results?search_query=docker+tutorial"
     },
     "kubernetes": {
         "category": "DevOps",
         "synonyms": ["kubernetes", "k8s"],
-        "youtube": "https://www.youtube.com/results?search_query=kubernetes+full+tutorial+for+beginners"
+        "youtube": "https://www.youtube.com/results?search_query=kubernetes+tutorial"
+    },
+    "jenkins": {
+        "category": "DevOps",
+        "synonyms": ["jenkins", "ci/cd", "cicd"],
+        "youtube": "https://www.youtube.com/results?search_query=jenkins+tutorial"
+    },
+    "terraform": {
+        "category": "DevOps",
+        "synonyms": ["terraform", "iac"],
+        "youtube": "https://www.youtube.com/results?search_query=terraform+tutorial"
     },
     "aws": {
         "category": "Cloud",
         "synonyms": ["aws", "amazon web services", "cloud"],
-        "youtube": "https://www.youtube.com/results?search_query=aws+full+course+for+beginners"
+        "youtube": "https://www.youtube.com/results?search_query=aws+full+course"
+    },
+    "azure": {
+        "category": "Cloud",
+        "synonyms": ["azure", "microsoft azure"],
+        "youtube": "https://www.youtube.com/results?search_query=azure+full+course"
+    },
+    "gcp": {
+        "category": "Cloud",
+        "synonyms": ["gcp", "google cloud"],
+        "youtube": "https://www.youtube.com/results?search_query=google+cloud+full+course"
     },
     "git": {
         "category": "DevOps",
         "synonyms": ["git", "github", "gitlab", "version control"],
-        "youtube": "https://www.youtube.com/results?search_query=git+github+full+tutorial"
+        "youtube": "https://www.youtube.com/results?search_query=git+github+tutorial"
+    },
+    "linux": {
+        "category": "DevOps",
+        "synonyms": ["linux", "unix", "bash", "shell scripting"],
+        "youtube": "https://www.youtube.com/results?search_query=linux+full+course"
     },
 
-    # ---------- Core Computer Science ----------
+    # ==================== CORE COMPUTER SCIENCE ====================
     "operating systems": {
         "category": "Core CS",
         "synonyms": ["operating systems", "operating system", "os"],
-        "youtube": "https://www.youtube.com/results?search_query=operating+system+full+course+placements"
+        "youtube": "https://www.youtube.com/results?search_query=operating+system+full+course"
     },
     "data structures": {
         "category": "Core CS",
-        "synonyms": ["data structures", "dsa", "algorithms", "data structures and algorithms"],
-        "youtube": "https://www.youtube.com/results?search_query=dsa+full+course+java+placements"
+        "synonyms": ["data structures", "dsa", "algorithms"],
+        "youtube": "https://www.youtube.com/results?search_query=dsa+full+course"
     },
     "computer networks": {
         "category": "Core CS",
         "synonyms": ["computer networks", "cn", "networking"],
         "youtube": "https://www.youtube.com/results?search_query=computer+networks+full+course"
     },
+    "software engineering": {
+        "category": "Core CS",
+        "synonyms": ["software engineering", "sdlc", "agile", "scrum"],
+        "youtube": "https://www.youtube.com/results?search_query=software+engineering+full+course"
+    },
 
-    # ---------- Data Visualization ----------
+    # ==================== DATA VISUALIZATION ====================
     "matplotlib": {
         "category": "Visualization",
         "synonyms": ["matplotlib", "seaborn", "data visualization"],
-        "youtube": "https://www.youtube.com/results?search_query=matplotlib+seaborn+python+tutorial"
+        "youtube": "https://www.youtube.com/results?search_query=matplotlib+seaborn+tutorial"
     },
     "power bi": {
         "category": "Visualization",
         "synonyms": ["power bi", "powerbi"],
-        "youtube": "https://www.youtube.com/results?search_query=power+bi+full+tutorial+2025"
+        "youtube": "https://www.youtube.com/results?search_query=power+bi+tutorial"
     },
     "tableau": {
         "category": "Visualization",
         "synonyms": ["tableau"],
-        "youtube": "https://www.youtube.com/results?search_query=tableau+full+tutorial+2025"
+        "youtube": "https://www.youtube.com/results?search_query=tableau+tutorial"
+    },
+    "excel": {
+        "category": "Visualization",
+        "synonyms": ["excel", "google sheets", "spreadsheet"],
+        "youtube": "https://www.youtube.com/results?search_query=excel+full+tutorial"
+    },
+
+    # ==================== BLOCKCHAIN & WEB3 ====================
+    "blockchain": {
+        "category": "Blockchain",
+        "synonyms": ["blockchain", "web3", "ethereum", "smart contracts", "solidity"],
+        "youtube": "https://www.youtube.com/results?search_query=blockchain+full+course"
+    },
+    "solidity": {
+        "category": "Blockchain",
+        "synonyms": ["solidity"],
+        "youtube": "https://www.youtube.com/results?search_query=solidity+tutorial"
+    },
+
+    # ==================== CYBERSECURITY ====================
+    "cybersecurity": {
+        "category": "Security",
+        "synonyms": ["cybersecurity", "cyber security", "ethical hacking", "penetration testing"],
+        "youtube": "https://www.youtube.com/results?search_query=cybersecurity+full+course"
+    },
+
+    # ==================== MOBILE DEVELOPMENT ====================
+    "android": {
+        "category": "Mobile",
+        "synonyms": ["android", "kotlin"],
+        "youtube": "https://www.youtube.com/results?search_query=android+development+full+course"
+    },
+    "flutter": {
+        "category": "Mobile",
+        "synonyms": ["flutter", "dart"],
+        "youtube": "https://www.youtube.com/results?search_query=flutter+full+course"
+    },
+    "react native": {
+        "category": "Mobile",
+        "synonyms": ["react native", "react-native"],
+        "youtube": "https://www.youtube.com/results?search_query=react+native+full+course"
+    },
+
+    # ==================== DATA ENGINEERING ====================
+    "hadoop": {
+        "category": "Data Engineering",
+        "synonyms": ["hadoop", "spark", "big data", "apache spark"],
+        "youtube": "https://www.youtube.com/results?search_query=big+data+hadoop+spark+full+course"
+    },
+    "kafka": {
+        "category": "Data Engineering",
+        "synonyms": ["kafka", "apache kafka"],
+        "youtube": "https://www.youtube.com/results?search_query=apache+kafka+tutorial"
+    },
+    "etl": {
+        "category": "Data Engineering",
+        "synonyms": ["etl", "data pipeline"],
+        "youtube": "https://www.youtube.com/results?search_query=etl+tutorial"
+    },
+
+    # ==================== SOFT SKILLS ====================
+    "communication": {
+        "category": "Soft Skills",
+        "synonyms": ["communication", "presentation", "interpersonal"],
+        "youtube": "https://www.youtube.com/results?search_query=communication+skills"
+    },
+    "leadership": {
+        "category": "Soft Skills",
+        "synonyms": ["leadership", "team management", "mentoring"],
+        "youtube": "https://www.youtube.com/results?search_query=leadership+skills"
+    },
+    "problem solving": {
+        "category": "Soft Skills",
+        "synonyms": ["problem solving", "critical thinking", "analytical"],
+        "youtube": "https://www.youtube.com/results?search_query=problem+solving+skills"
+    },
+
+    # ==================== OTHER TOOLS ====================
+    "jira": {
+        "category": "Tools",
+        "synonyms": ["jira", "confluence", "trello"],
+        "youtube": "https://www.youtube.com/results?search_query=jira+tutorial"
+    },
+    "figma": {
+        "category": "Tools",
+        "synonyms": ["figma", "adobe xd"],
+        "youtube": "https://www.youtube.com/results?search_query=figma+tutorial"
     },
 }
 
-# Build reverse lookup: synonym → skill name
+# ============================================
+# BUILD SYNONYM LOOKUP TABLE
 # Example: "os" → "operating systems", "dsa" → "data structures"
+# ============================================
+
 all_skill_synonyms = {}
 for skill_name, data in skill_data.items():
     for synonym in data["synonyms"]:
@@ -210,7 +402,6 @@ for skill_name, data in skill_data.items():
 
 # ============================================
 # TEXT EXTRACTION FUNCTIONS
-# Extract text from PDF, DOCX, TXT files
 # ============================================
 
 def extract_text_from_pdf(file_path):
@@ -231,7 +422,7 @@ def extract_text_from_docx(file_path):
 
 
 def extract_text(file_path):
-    """Main function: detects file type and extracts text accordingly"""
+    """Detect file type and extract text accordingly"""
     if file_path.endswith('.pdf'):
         return extract_text_from_pdf(file_path)
     elif file_path.endswith('.docx'):
@@ -244,13 +435,12 @@ def extract_text(file_path):
 
 # ============================================
 # SKILL MATCHING FUNCTIONS
-# Match skills using synonyms for better accuracy
 # ============================================
 
 def extract_skills_from_text(text):
     """
-    Find all skills mentioned in a text using synonym matching.
-    Example: If text has "os", it will match "operating systems".
+    Find all skills mentioned in text using synonym matching.
+    Example: "os" in text → matches "operating systems"
     """
     text_lower = text.lower()
     found_skills = set()
@@ -263,10 +453,7 @@ def extract_skills_from_text(text):
 
 
 def find_skill_in_text(skill_name, text_lower):
-    """
-    Check if a specific skill exists in resume text.
-    Checks all synonyms of that skill.
-    """
+    """Check if a specific skill exists in resume (checks all synonyms)"""
     data = skill_data.get(skill_name)
     if data:
         for synonym in data["synonyms"]:
@@ -277,14 +464,12 @@ def find_skill_in_text(skill_name, text_lower):
 
 # ============================================
 # INTERVIEW QUESTION GENERATOR
-# Generates questions based on JD keywords
 # ============================================
 
 def generate_interview_questions(job_description):
     """Generate interview questions based on skills found in JD"""
     jd_lower = job_description.lower()
 
-    # Question bank organized by skill
     question_bank = {
         "python": [
             "Explain Python decorators with example",
@@ -336,18 +521,25 @@ def generate_interview_questions(job_description):
             "Difference between REST and GraphQL?",
             "How do you handle authentication in APIs?"
         ],
+        "blockchain": [
+            "What is blockchain? How does it work?",
+            "Explain smart contracts with example",
+            "Difference between Proof of Work and Proof of Stake?"
+        ],
+        "cybersecurity": [
+            "What is the CIA triad?",
+            "Explain common web vulnerabilities (OWASP Top 10)",
+            "Difference between encryption and hashing?"
+        ],
     }
 
-    # Collect questions for skills found in JD
     questions = []
     for skill, skill_questions in question_bank.items():
-        # Check if skill or any of its synonyms is in JD
         skill_data_entry = skill_data.get(skill, {})
         synonyms = skill_data_entry.get("synonyms", [])
         if skill in jd_lower or any(syn in jd_lower for syn in synonyms):
             questions.extend(skill_questions)
 
-    # If no specific questions, provide general questions
     if not questions:
         questions = [
             "Tell me about yourself and your technical background",
@@ -360,12 +552,11 @@ def generate_interview_questions(job_description):
             "What's your approach to debugging complex issues?"
         ]
 
-    return questions[:12]  # Return max 12 questions
+    return questions[:12]
 
 
 # ============================================
 # SMART SUGGESTIONS GENERATOR
-# Creates personalized suggestions with YouTube links
 # ============================================
 
 def generate_smart_suggestions(missing_skills):
@@ -376,7 +567,6 @@ def generate_smart_suggestions(missing_skills):
     """
     suggestions = []
 
-    # Templates for different skill categories
     suggestion_templates = {
         "Programming": "Master {skill} - essential for technical interviews and development roles",
         "AI/ML": "Learn {skill} to build intelligent models and boost your AI/ML profile",
@@ -386,6 +576,12 @@ def generate_smart_suggestions(missing_skills):
         "Cloud": "Get certified in {skill} - cloud skills are top-paying in 2025",
         "Core CS": "Brush up {skill} - frequently asked in technical interviews",
         "Visualization": "Learn {skill} to present data insights effectively",
+        "Blockchain": "Explore {skill} - emerging field with high demand and great potential",
+        "Security": "Master {skill} - critical for protecting systems and data from threats",
+        "Mobile": "Build {skill} skills - mobile development market is booming in 2025",
+        "Data Engineering": "Learn {skill} - handle large-scale data processing and pipelines",
+        "Soft Skills": "Develop your {skill} - essential for professional growth and leadership",
+        "Tools": "Get hands-on with {skill} - industry-standard tool used by top companies",
     }
 
     for skill in missing_skills:
@@ -393,7 +589,6 @@ def generate_smart_suggestions(missing_skills):
         category = data.get("category", "General")
         youtube_link = data.get("youtube", f"https://www.youtube.com/results?search_query={skill.replace(' ', '+')}+tutorial")
 
-        # Get the right template for this category
         template = suggestion_templates.get(category, "Add {skill} to strengthen your profile")
         description = template.format(skill=skill.title())
 
@@ -409,141 +604,73 @@ def generate_smart_suggestions(missing_skills):
 
 # ============================================
 # PDF REPORT GENERATOR
-# Creates professional downloadable PDF report
 # ============================================
 
 def generate_pdf_report(job_description, results, interview_questions):
-    """
-    Generate a professional PDF report containing:
-    - Cover page with JD summary
-    - Score table for each resume
-    - Matched and missing skills
-    - Improvement suggestions
-    - Interview questions
-    """
-    # Create PDF in memory (no file saved on disk)
+    """Generate professional PDF report with scores, skills, and interview questions"""
+    
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=0.5*inch, bottomMargin=0.5*inch)
     styles = getSampleStyleSheet()
 
-    # --- Define custom styles ---
-    title_style = ParagraphStyle(
-        'CustomTitle', parent=styles['Heading1'],
-        fontSize=22, textColor=colors.HexColor('#007bff'),
-        spaceAfter=6, alignment=1  # Center aligned
-    )
+    # --- Custom Styles ---
+    title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], fontSize=22, 
+                                   textColor=colors.HexColor('#007bff'), spaceAfter=6, alignment=1)
+    subtitle_style = ParagraphStyle('Subtitle', parent=styles['Normal'], fontSize=10, 
+                                      textColor=colors.grey, alignment=1, spaceAfter=20)
+    heading_style = ParagraphStyle('SectionHead', parent=styles['Heading2'], fontSize=14, 
+                                     textColor=colors.HexColor('#333333'), spaceBefore=15, spaceAfter=8)
+    subheading_style = ParagraphStyle('SubHead', parent=styles['Heading3'], fontSize=12, 
+                                        textColor=colors.HexColor('#0056b3'), spaceBefore=10, spaceAfter=5)
+    normal_style = ParagraphStyle('CustomNormal', parent=styles['Normal'], fontSize=9, 
+                                    leading=13, textColor=colors.HexColor('#444444'))
+    small_style = ParagraphStyle('Small', parent=styles['Normal'], fontSize=8, textColor=colors.grey)
+    matched_style = ParagraphStyle('Matched', parent=styles['Normal'], fontSize=8, 
+                                    textColor=colors.HexColor('#2e7d32'), backColor=colors.HexColor('#e8f5e9'))
+    missing_style = ParagraphStyle('Missing', parent=styles['Normal'], fontSize=8, 
+                                    textColor=colors.HexColor('#c62828'), backColor=colors.HexColor('#ffebee'))
+    question_style = ParagraphStyle('Question', parent=styles['Normal'], fontSize=9, 
+                                      leading=14, leftIndent=15, textColor=colors.HexColor('#333333'))
 
-    subtitle_style = ParagraphStyle(
-        'Subtitle', parent=styles['Normal'],
-        fontSize=10, textColor=colors.grey,
-        alignment=1, spaceAfter=20
-    )
-
-    heading_style = ParagraphStyle(
-        'SectionHead', parent=styles['Heading2'],
-        fontSize=14, textColor=colors.HexColor('#333333'),
-        spaceBefore=15, spaceAfter=8
-    )
-
-    subheading_style = ParagraphStyle(
-        'SubHead', parent=styles['Heading3'],
-        fontSize=12, textColor=colors.HexColor('#0056b3'),
-        spaceBefore=10, spaceAfter=5
-    )
-
-    normal_style = ParagraphStyle(
-        'CustomNormal', parent=styles['Normal'],
-        fontSize=9, leading=13,
-        textColor=colors.HexColor('#444444')
-    )
-
-    small_style = ParagraphStyle(
-        'Small', parent=styles['Normal'],
-        fontSize=8, textColor=colors.grey
-    )
-
-    # Green tag for matched skills
-    matched_style = ParagraphStyle(
-        'Matched', parent=styles['Normal'],
-        fontSize=8, textColor=colors.HexColor('#2e7d32'),
-        backColor=colors.HexColor('#e8f5e9')
-    )
-
-    # Red tag for missing skills
-    missing_style = ParagraphStyle(
-        'Missing', parent=styles['Normal'],
-        fontSize=8, textColor=colors.HexColor('#c62828'),
-        backColor=colors.HexColor('#ffebee')
-    )
-
-    question_style = ParagraphStyle(
-        'Question', parent=styles['Normal'],
-        fontSize=9, leading=14, leftIndent=15,
-        textColor=colors.HexColor('#333333')
-    )
-
-    # --- Build PDF content ---
     elements = []
 
-    # ===== PAGE 1: COVER =====
+    # --- PAGE 1: COVER ---
     elements.append(Spacer(1, 1.5*inch))
     elements.append(Paragraph("AI Resume Analyzer", title_style))
     elements.append(Paragraph("Professional ATS Analysis Report", subtitle_style))
-
-    date_style = ParagraphStyle('Date', parent=styles['Normal'],
-                                fontSize=10, alignment=1, textColor=colors.grey)
-    elements.append(Paragraph(
-        f"Generated: {datetime.now().strftime('%B %d, %Y at %I:%M %p')}",
-        date_style
-    ))
+    date_style = ParagraphStyle('Date', parent=styles['Normal'], fontSize=10, alignment=1, textColor=colors.grey)
+    elements.append(Paragraph(f"Generated: {datetime.now().strftime('%B %d, %Y at %I:%M %p')}", date_style))
     elements.append(Spacer(1, 0.3*inch))
-
-    # Job Description Summary
     elements.append(Paragraph("Job Description Summary", heading_style))
     jd_summary = job_description[:500] + "..." if len(job_description) > 500 else job_description
     elements.append(Paragraph(jd_summary.replace('\n', '<br/>'), normal_style))
     elements.append(PageBreak())
 
-    # ===== PAGE 2: RESUME RESULTS =====
+    # --- PAGE 2: RESUME RESULTS ---
     elements.append(Paragraph("Resume Analysis Results", heading_style))
     elements.append(Paragraph(f"Total Resumes Analyzed: {len(results)}", normal_style))
     elements.append(Spacer(1, 0.2*inch))
 
-    # Loop through each resume result
     for i, resume in enumerate(results):
-        # Resume header
         elements.append(Paragraph(f"Rank #{i+1}: {resume['filename']}", subheading_style))
 
-        # Color code for decision
         if resume['decision'] == 'Shortlist':
-            decision_color = '#2e7d32'  # Green
+            decision_color = '#2e7d32'
         elif resume['decision'] == 'Consider':
-            decision_color = '#f57f17'  # Orange
+            decision_color = '#f57f17'
         else:
-            decision_color = '#c62828'  # Red
+            decision_color = '#c62828'
 
-        # Score table
         score_data = [
-            [
-                Paragraph('<b>Metric</b>', normal_style),
-                Paragraph('<b>Score</b>', normal_style),
-                Paragraph('<b>Rating</b>', normal_style)
-            ],
-            [
-                Paragraph('Similarity Score', normal_style),
-                Paragraph(f"{resume['similarity']}%", normal_style),
-                Paragraph('-', normal_style)
-            ],
-            [
-                Paragraph('ATS Score', normal_style),
-                Paragraph(f"{resume['ats_score']}%", normal_style),
-                Paragraph(resume['level'], normal_style)
-            ],
-            [
-                Paragraph('Decision', normal_style),
-                Paragraph(resume['decision'], ParagraphStyle('D', parent=normal_style, textColor=decision_color)),
-                Paragraph('-', normal_style)
-            ]
+            [Paragraph('<b>Metric</b>', normal_style), Paragraph('<b>Score</b>', normal_style), 
+             Paragraph('<b>Rating</b>', normal_style)],
+            [Paragraph('Similarity Score', normal_style), Paragraph(f"{resume['similarity']}%", normal_style), 
+             Paragraph('-', normal_style)],
+            [Paragraph('ATS Score', normal_style), Paragraph(f"{resume['ats_score']}%", normal_style), 
+             Paragraph(resume['level'], normal_style)],
+            [Paragraph('Decision', normal_style), 
+             Paragraph(resume['decision'], ParagraphStyle('D', parent=normal_style, textColor=decision_color)), 
+             Paragraph('-', normal_style)]
         ]
 
         score_table = Table(score_data, colWidths=[2.5*inch, 1.5*inch, 1.5*inch])
@@ -558,41 +685,35 @@ def generate_pdf_report(job_description, results, interview_questions):
         elements.append(score_table)
         elements.append(Spacer(1, 0.15*inch))
 
-        # Matched Skills
-        elements.append(Paragraph('<b>Matched Skills:</b>', normal_style))
+        elements.append(Paragraph('<b>✅ Matched Skills:</b>', normal_style))
         if resume.get('matched_skills'):
             elements.append(Paragraph(', '.join(resume['matched_skills']), matched_style))
         else:
             elements.append(Paragraph('None', normal_style))
 
         elements.append(Spacer(1, 0.1*inch))
-
-        # Missing Skills
-        elements.append(Paragraph('<b>Missing Skills:</b>', normal_style))
+        elements.append(Paragraph('<b>❌ Missing Skills:</b>', normal_style))
         if resume.get('missing_skills'):
             elements.append(Paragraph(', '.join(resume['missing_skills']), missing_style))
         else:
-            elements.append(Paragraph('None - Perfect Match!', matched_style))
+            elements.append(Paragraph('None - Perfect Match! 🎉', matched_style))
 
         elements.append(Spacer(1, 0.1*inch))
-
-        # Improvement Suggestions (top 5)
-        elements.append(Paragraph('<b>Improvement Plan:</b>', normal_style))
+        elements.append(Paragraph('<b>💡 Improvement Plan:</b>', normal_style))
         if resume.get('suggestions'):
             for sug in resume['suggestions'][:5]:
                 bullet = f"• <b>{sug['skill'].title()}</b> [{sug['category']}]: {sug['description']}"
                 elements.append(Paragraph(bullet, normal_style))
         else:
-            elements.append(Paragraph('No improvements needed!', normal_style))
+            elements.append(Paragraph('No improvements needed! Perfect profile!', normal_style))
 
-        # Add separator between resumes (except last)
         if i < len(results) - 1:
             elements.append(Spacer(1, 0.2*inch))
             elements.append(Paragraph('<hr width="100%" color="#dddddd" size="0.5"/>', normal_style))
 
     elements.append(PageBreak())
 
-    # ===== PAGE 3: INTERVIEW QUESTIONS =====
+    # --- PAGE 3: INTERVIEW QUESTIONS ---
     elements.append(Paragraph("Interview Preparation Questions", heading_style))
     elements.append(Paragraph("Based on Job Description keywords", small_style))
     elements.append(Spacer(1, 0.15*inch))
@@ -601,16 +722,13 @@ def generate_pdf_report(job_description, results, interview_questions):
         elements.append(Paragraph(f"{j}. {question}", question_style))
         elements.append(Spacer(1, 0.05*inch))
 
-    # Footer
     elements.append(Spacer(1, 0.5*inch))
-    footer_style = ParagraphStyle('Footer', parent=styles['Normal'],
-                                   fontSize=7, textColor=colors.grey, alignment=1)
+    footer_style = ParagraphStyle('Footer', parent=styles['Normal'], fontSize=7, textColor=colors.grey, alignment=1)
     elements.append(Paragraph("Generated by AI Resume Analyzer | Powered by Flask & Machine Learning", footer_style))
     elements.append(Paragraph("YouTube learning resources available in web version", footer_style))
 
-    # Build the PDF
     doc.build(elements)
-    buffer.seek(0)  # Reset buffer position to beginning
+    buffer.seek(0)
     return buffer
 
 
@@ -642,19 +760,17 @@ def matcher():
     Main processing route:
     1. Receives JD + resume files
     2. Extracts text from resumes
-    3. Calculates similarity using TF-IDF + Cosine Similarity
-    4. Matches skills using synonym matching
+    3. Calculates TF-IDF similarity
+    4. Matches skills using synonyms
     5. Calculates weighted ATS score
-    6. Generates suggestions and interview questions
+    6. Generates suggestions & interview questions
     """
-    # Get form data
     job_description = request.form['job_description']
     resume_files = request.files.getlist('resumes')
 
     resumes = []
     filenames = []
 
-    # Save and extract text from each uploaded resume
     for file in resume_files:
         if file.filename == '':
             continue
@@ -663,7 +779,6 @@ def matcher():
         resumes.append(extract_text(file_path))
         filenames.append(file.filename)
 
-    # If no files uploaded, return error
     if not resumes or not job_description:
         return render_template(
             "matchresume.html",
@@ -674,28 +789,23 @@ def matcher():
             improvement_suggestions=[], interview_questions=[]
         )
 
-    # ===== STEP 1: TF-IDF Vectorization & Cosine Similarity =====
+    # STEP 1: TF-IDF Vectorization & Cosine Similarity
     vectorizer = TfidfVectorizer(stop_words='english')
     all_texts = [job_description] + resumes
     vectors = vectorizer.fit_transform(all_texts).toarray()
-
     job_vector = vectors[0]
     resume_vectors = vectors[1:]
     similarities = cosine_similarity([job_vector], resume_vectors)[0]
 
-    # ===== STEP 2: Extract skills from JD =====
+    # STEP 2: Extract skills from JD
     jd_skills = extract_skills_from_text(job_description)
-
-    # Critical skills get double weight in ATS scoring
     critical_skills = ["python", "java", "machine learning", "sql", "data structures", "aws", "docker"]
 
-    # ===== STEP 3: Analyze each resume =====
+    # STEP 3: Analyze each resume
     results = []
 
     for i, resume_text in enumerate(resumes):
         resume_lower = resume_text.lower()
-
-        # Find matched and missing skills
         matched_skills = []
         missing_skills = []
 
@@ -705,12 +815,11 @@ def matcher():
             else:
                 missing_skills.append(skill)
 
-        # Calculate weighted ATS score
+        # Weighted ATS Score (critical skills = 2x)
         if jd_skills:
             total_weight = 0
             earned_weight = 0
             for skill in jd_skills:
-                # Critical skills get 2x weight
                 weight = 2 if skill in critical_skills else 1
                 total_weight += weight
                 if skill in matched_skills:
@@ -719,7 +828,7 @@ def matcher():
         else:
             ats_score = 0
 
-        # Determine level
+        # Level
         if ats_score >= 80:
             level = "Excellent"
         elif ats_score >= 60:
@@ -729,7 +838,7 @@ def matcher():
         else:
             level = "Weak"
 
-        # Determine recruiter decision
+        # Decision
         if ats_score >= 75:
             decision = "Shortlist"
         elif ats_score >= 50:
@@ -737,10 +846,8 @@ def matcher():
         else:
             decision = "Reject"
 
-        # Generate smart suggestions for missing skills
         suggestions = generate_smart_suggestions(missing_skills)
 
-        # Store result
         results.append({
             "filename": filenames[i],
             "similarity": round(similarities[i] * 100, 2),
@@ -752,10 +859,10 @@ def matcher():
             "suggestions": suggestions
         })
 
-    # ===== STEP 4: Sort & limit to top 5 =====
+    # STEP 4: Sort & limit to top 5
     results = sorted(results, key=lambda x: (x["ats_score"], x["similarity"]), reverse=True)[:5]
 
-    # ===== STEP 5: Extract flat lists for template =====
+    # STEP 5: Extract flat lists for template
     top_resumes = [r["filename"] for r in results]
     similarity_scores = [r["similarity"] for r in results]
     ats_scores = [r["ats_score"] for r in results]
@@ -765,18 +872,17 @@ def matcher():
     missing_skills_all = [r["missing_skills"] for r in results]
     improvement_suggestions = [r["suggestions"] for r in results]
 
-    # Generate interview questions
     interview_questions = generate_interview_questions(job_description)
 
-    # ===== STEP 6: Store data for PDF download =====
+    # STEP 6: Store for PDF download
     app.config['LAST_RESULTS'] = results
     app.config['LAST_JD'] = job_description
     app.config['LAST_QUESTIONS'] = interview_questions
 
-    # ===== STEP 7: Render results page =====
+    # STEP 7: Render results
     return render_template(
         "matchresume.html",
-        message=f"Analysis complete - Top {len(results)} matching resumes found",
+        message=f"✅ Analysis complete — Top {len(results)} matching resumes found",
         top_resumes=top_resumes,
         similarity_scores=similarity_scores,
         ats_scores=ats_scores,
@@ -791,23 +897,16 @@ def matcher():
 
 @app.route('/download-report')
 def download_report():
-    """
-    Generate and download PDF report.
-    Uses data from the last analysis (stored in app.config).
-    """
-    # Get stored data from last analysis
+    """Generate and download PDF report from last analysis"""
     last_results = app.config.get('LAST_RESULTS')
     last_jd = app.config.get('LAST_JD')
     last_questions = app.config.get('LAST_QUESTIONS')
 
-    # If no analysis has been run yet
     if not last_results:
         return "No analysis data found. Please run an analysis first.", 400
 
-    # Generate PDF
     pdf_buffer = generate_pdf_report(last_jd, last_results, last_questions)
 
-    # Send PDF as downloadable file
     return send_file(
         pdf_buffer,
         download_name=f"Resume_Analysis_Report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
@@ -820,7 +919,5 @@ def download_report():
 # START THE APP
 # ============================================
 if __name__ == '__main__':
-    # Create uploads folder if it doesn't exist
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-    # Run Flask development server
     app.run(debug=True)
